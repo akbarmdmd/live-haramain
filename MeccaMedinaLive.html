@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🕋 Mecca & Medina Live</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e; color: #e0e0e0;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    height: 100vh; overflow: hidden;
+  }
+  .split-view {
+    display: flex; height: 100vh; width: 100%;
+  }
+  .panel {
+    flex: 1; display: flex; flex-direction: column; position: relative;
+  }
+  .panel .toolbar {
+    position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+    z-index: 10; display: flex; align-items: center; gap: 0;
+    background: rgba(0,0,0,0.7); border-radius: 8px; overflow: hidden;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .panel:hover .toolbar { opacity: 1; }
+  .toolbar .label {
+    color: #f5c518; padding: 5px 14px; font-size: 0.85rem; font-weight: 600;
+    white-space: nowrap;
+  }
+  .toolbar .ch-name {
+    color: #ccc; font-size: 0.82rem; padding: 5px 12px;
+    white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis;
+  }
+  .toolbar button {
+    background: none; border: none; color: #e0e0e0; font-size: 1rem;
+    padding: 5px 10px; cursor: pointer; transition: background 0.2s;
+  }
+  .toolbar button:hover { background: rgba(255,255,255,0.15); }
+  .panel iframe {
+    width: 100%; height: 100%; border: none;
+  }
+  .divider {
+    width: 1px; background: rgba(255,255,255,0.1); flex-shrink: 0;
+  }
+
+  /* View All grid */
+  .view-toggle {
+    position: fixed; top: 50px; right: 10px; z-index: 20;
+    padding: 6px 16px; border: 1px solid rgba(245,197,24,0.4); border-radius: 20px;
+    background: rgba(0,0,0,0.7); color: #f5c518; font-size: 0.82rem;
+    cursor: pointer; transition: all 0.3s; font-family: inherit;
+  }
+  .view-toggle:hover { background: rgba(245,197,24,0.15); }
+
+  .grid-view {
+    display: none; height: 100vh; width: 100%;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 2px; background: #1a1a2e;
+  }
+  .grid-view.active { display: grid; }
+
+  .grid-cell {
+    position: relative; overflow: hidden; background: #000;
+  }
+  .grid-cell iframe {
+    width: 100%; height: 100%; border: none;
+  }
+  .grid-cell .grid-label {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 4px 10px; font-size: 0.72rem; font-weight: 600;
+    background: rgba(0,0,0,0.7); color: #f5c518;
+    text-align: center; opacity: 0; transition: opacity 0.3s;
+  }
+  .grid-cell:hover .grid-label { opacity: 1; }
+</style>
+</head>
+<body>
+
+<button class="view-toggle" id="toggleBtn" onclick="toggleView()">▦ View All</button>
+
+<div class="split-view" id="split-view">
+  <div class="panel" id="panel-mecca">
+    <div class="toolbar">
+      <button onclick="cycleChannel('mecca', -1)">◀</button>
+      <div class="label">🕋 Mecca</div>
+      <div class="ch-name" id="mecca-ch-name"></div>
+      <button onclick="cycleChannel('mecca', 1)">▶</button>
+    </div>
+    <iframe id="frame-mecca" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+  </div>
+  <div class="divider"></div>
+  <div class="panel" id="panel-madina">
+    <div class="toolbar">
+      <button onclick="cycleChannel('madina', -1)">◀</button>
+      <div class="label">🕌 Madina</div>
+      <div class="ch-name" id="madina-ch-name"></div>
+      <button onclick="cycleChannel('madina', 1)">▶</button>
+    </div>
+    <iframe id="frame-madina" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+  </div>
+</div>
+
+<div class="grid-view" id="grid-view"></div>
+
+<script>
+  const meccaChannels = [
+    { id: 'fZvuHkHYaXk', name: 'KSA Qur\'an TV' },
+    { id: 'sNDikEksNf4', name: 'Muhammad Ali' },
+    { id: '_mAW9i2ihnM', name: 'ALQuran4K' },
+  ];
+  const madinaChannels = [
+    { id: '3L7Gf0BD0gc', name: 'ALQuran4K' },
+    { id: 'pxOz8TcJw5Y', name: 'Naimat' },
+    { id: '9rmHzOb5ECs', name: 'Muhammad Ali' },
+    { id: 'naaOMgZbIHQ', name: 'Ar Rahman' },
+  ];
+
+  let meccaIndex = 0;
+  let madinaIndex = 0;
+
+  function loadChannel(side) {
+    const channels = side === 'mecca' ? meccaChannels : madinaChannels;
+    const index = side === 'mecca' ? meccaIndex : madinaIndex;
+    const ch = channels[index];
+    document.getElementById('frame-' + side).src =
+      'https://www.youtube.com/embed/' + ch.id + '?autoplay=1&mute=1&rel=0';
+    document.getElementById(side + '-ch-name').textContent = ch.name + ' (' + (index + 1) + '/' + channels.length + ')';
+  }
+
+  function cycleChannel(side, dir) {
+    if (side === 'mecca') {
+      meccaIndex = (meccaIndex + dir + meccaChannels.length) % meccaChannels.length;
+    } else {
+      madinaIndex = (madinaIndex + dir + madinaChannels.length) % madinaChannels.length;
+    }
+    loadChannel(side);
+  }
+
+  loadChannel('mecca');
+  loadChannel('madina');
+
+  let gridActive = false;
+
+  function toggleView() {
+    gridActive = !gridActive;
+    const split = document.getElementById('split-view');
+    const grid = document.getElementById('grid-view');
+    const btn = document.getElementById('toggleBtn');
+
+    if (gridActive) {
+      split.style.display = 'none';
+      grid.classList.add('active');
+      btn.textContent = '⬜ Split View';
+      buildGrid();
+    } else {
+      grid.classList.remove('active');
+      grid.innerHTML = '';
+      split.style.display = 'flex';
+      btn.textContent = '▦ View All';
+    }
+  }
+
+  function buildGrid() {
+    const grid = document.getElementById('grid-view');
+    const all = [
+      ...meccaChannels.map(c => ({ ...c, city: '🕋 Mecca' })),
+      ...madinaChannels.map(c => ({ ...c, city: '🕌 Madina' }))
+    ];
+
+    // 7 channels: 4 cols x 2 rows
+    grid.style.gridTemplateColumns = `repeat(4, 1fr)`;
+    grid.style.gridTemplateRows = `repeat(2, 1fr)`;
+
+    grid.innerHTML = all.map(ch => `
+      <div class="grid-cell">
+        <iframe src="https://www.youtube.com/embed/${ch.id}?autoplay=1&mute=1&rel=0"
+          allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+        <div class="grid-label">${ch.city} — ${ch.name}</div>
+      </div>
+    `).join('');
+  }
+</script>
+
+</body>
+</html>
